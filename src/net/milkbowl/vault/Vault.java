@@ -15,11 +15,9 @@
  */
 package net.milkbowl.vault;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Logger;
 
@@ -61,34 +59,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.ServicesManager;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
 
 import net.milkbowl.vault.chat.plugins.Chat_TotalPermissions;
 
 public class Vault extends JavaPlugin {
 
-    private static final String VAULT_BUKKIT_URL = "https://dev.bukkit.org/projects/Vault";
     private static Logger log;
     private Permission perms;
-    private String newVersionTitle = "";
-    private double newVersion = 0;
-    private double currentVersion = 0;
-    private String currentVersionTitle = "";
     private ServicesManager sm;
-    private Vault plugin;
 
     @Override
     public void onDisable() {
@@ -99,61 +82,15 @@ public class Vault extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        plugin = this;
         log = this.getLogger();
-        currentVersionTitle = getDescription().getVersion().split("-")[0];
-        currentVersion = Double.valueOf(currentVersionTitle.replaceFirst("\\.", ""));
         sm = getServer().getServicesManager();
-        // set defaults
-        getConfig().addDefault("update-check", true);
-        getConfig().options().copyDefaults(true);
-        saveConfig();
+
         // Load Vault Addons
         loadPermission();
         loadChat();
 
         getCommand("vault-info").setExecutor(this);
         getCommand("vault-convert").setExecutor(this);
-        getServer().getPluginManager().registerEvents(new VaultListener(), this);
-        // Schedule to check the version every 30 minutes for an update. This is to update the most recent 
-        // version so if an admin reconnects they will be warned about newer versions.
-        this.getServer().getScheduler().runTask(this, new Runnable() {
-
-            @Override
-            public void run() {
-                // Programmatically set the default permission value cause Bukkit doesn't handle plugin.yml properly for Load order STARTUP plugins
-                org.bukkit.permissions.Permission perm = getServer().getPluginManager().getPermission("vault.update");
-                if (perm == null)
-                {
-                    perm = new org.bukkit.permissions.Permission("vault.update");
-                    perm.setDefault(PermissionDefault.OP);
-                    plugin.getServer().getPluginManager().addPermission(perm);
-                }
-                perm.setDescription("Allows a user or the console to check for vault updates");
-
-                getServer().getScheduler().runTaskTimerAsynchronously(plugin, new Runnable() {
-
-                    @Override
-                    public void run() {
-                        if (getServer().getConsoleSender().hasPermission("vault.update") && getConfig().getBoolean("update-check", true)) {
-                            try {
-                            	log.info("Checking for Updates ... ");
-                                newVersion = updateCheck(currentVersion);
-                                if (newVersion > currentVersion) {
-                                    log.warning("Stable Version: " + newVersionTitle + " is out!" + " You are still running version: " + currentVersionTitle);
-                                    log.warning("Update at: https://dev.bukkit.org/projects/vault");
-                                } else if (currentVersion > newVersion) {
-                                    log.info("Stable Version: " + newVersionTitle + " | Current Version: " + currentVersionTitle);
-                                }
-                            } catch (Exception e) {
-                                // ignore exceptions
-                            }
-                        }
-                    }
-                }, 0, 432000);
-
-            }
-        });
 
         // Load up the Plugin metrics
         Metrics metrics = new Metrics(this, 887);
@@ -181,8 +118,8 @@ public class Vault extends JavaPlugin {
         // Try to load DroxPerms Chat
         hookChat("DroxPerms", Chat_DroxPerms.class, ServicePriority.Lowest, "de.hydrox.bukkit.DroxPerms.DroxPerms");
 
-        // Try to load bPermssions 2
-        hookChat("bPermssions2", Chat_bPermissions2.class, ServicePriority.Highest, "de.bananaco.bpermissions.api.ApiLayer");
+        // Try to load bPermissions 2
+        hookChat("bPermissions2", Chat_bPermissions2.class, ServicePriority.Highest, "de.bananaco.bpermissions.api.ApiLayer");
 
         // Try to load bPermissions 1
         hookChat("bPermissions", Chat_bPermissions.class, ServicePriority.Normal, "de.bananaco.permissions.info.InfoReader");
@@ -359,44 +296,21 @@ public class Vault extends JavaPlugin {
                 
             }
         }
-        sender.sendMessage("Converson complete, please verify the data before using it.");
+        sender.sendMessage("Conversion complete, please verify the data before using it.");
     }
 
     private void infoCommand(CommandSender sender) {
         // Get String of Registered Economy Services
-        String registeredEcons = null;
         Collection<RegisteredServiceProvider<Economy>> econs = this.getServer().getServicesManager().getRegistrations(Economy.class);
-        for (RegisteredServiceProvider<Economy> econ : econs) {
-            Economy e = econ.getProvider();
-            if (registeredEcons == null) {
-                registeredEcons = e.getName();
-            } else {
-                registeredEcons += ", " + e.getName();
-            }
-        }
+        String registeredEcons = getRegisteredNames(econs);
 
         // Get String of Registered Permission Services
-        String registeredPerms = null;
         Collection<RegisteredServiceProvider<Permission>> perms = this.getServer().getServicesManager().getRegistrations(Permission.class);
-        for (RegisteredServiceProvider<Permission> perm : perms) {
-            Permission p = perm.getProvider();
-            if (registeredPerms == null) {
-                registeredPerms = p.getName();
-            } else {
-                registeredPerms += ", " + p.getName();
-            }
-        }
+        String registeredPerms = getRegisteredNames(perms);
 
-        String registeredChats = null;
+        // Get String of Registered Chat Services
         Collection<RegisteredServiceProvider<Chat>> chats = this.getServer().getServicesManager().getRegistrations(Chat.class);
-        for (RegisteredServiceProvider<Chat> chat : chats) {
-            Chat c = chat.getProvider();
-            if (registeredChats == null) {
-                registeredChats = c.getName();
-            } else {
-                registeredChats += ", " + c.getName();
-            }
-        }
+        String registeredChats = getRegisteredNames(chats);
 
         // Get Economy & Permission primary Services
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
@@ -421,6 +335,34 @@ public class Vault extends JavaPlugin {
         sender.sendMessage(String.format("[%s] Chat: %s [%s]", getDescription().getName(), chat == null ? "None" : chat.getName(), registeredChats));
     }
 
+    private <T> String getRegisteredNames(Collection<RegisteredServiceProvider<T>> registrations) {
+        if (registrations == null || registrations.isEmpty()) {
+            return "None";
+        }
+
+        List<String> names = new ArrayList<String>();
+        for (RegisteredServiceProvider<T> registration : registrations) {
+            Object provider = registration.getProvider();
+            if (provider instanceof Economy) {
+                names.add(((Economy) provider).getName());
+            } else if (provider instanceof Permission) {
+                names.add(((Permission) provider).getName());
+            } else if (provider instanceof Chat) {
+                names.add(((Chat) provider).getName());
+            }
+        }
+
+        if (names.isEmpty()) {
+            return "None";
+        }
+
+        String registeredNames = names.get(0);
+        for (int i = 1; i < names.size(); i++) {
+            registeredNames += ", " + names.get(i);
+        }
+        return registeredNames;
+    }
+
     /**
      * Determines if all packages in a String array are within the Classpath
      * This is the best way to determine if a specific plugin exists and will be
@@ -438,30 +380,6 @@ public class Vault extends JavaPlugin {
         } catch (Exception e) {
             return false;
         }
-    }
-
-    public double updateCheck(double currentVersion) {
-        try {
-            URL url = new URL("https://api.curseforge.com/servermods/files?projectids=33184");
-            URLConnection conn = url.openConnection();
-            conn.setReadTimeout(5000);
-            conn.addRequestProperty("User-Agent", "Vault Update Checker");
-            conn.setDoOutput(true);
-            final BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            final String response = reader.readLine();
-            final JSONArray array = (JSONArray) JSONValue.parse(response);
-
-            if (array.size() == 0) {
-                this.getLogger().warning("No files found, or Feed URL is bad.");
-                return currentVersion;
-            }
-            // Pull the last version from the JSON
-            newVersionTitle = ((String) ((JSONObject) array.get(array.size() - 1)).get("name")).replace("Vault", "").trim();
-            return Double.valueOf(newVersionTitle.replaceFirst("\\.", "").trim());
-        } catch (Exception e) {
-            log.info("There was an issue attempting to check for the latest version.");
-        }
-        return currentVersion;
     }
 
     private void findCustomData(Metrics metrics) {
@@ -503,22 +421,4 @@ public class Vault extends JavaPlugin {
         }));
     }
 
-    public class VaultListener implements Listener {
-
-        @EventHandler(priority = EventPriority.MONITOR)
-        public void onPlayerJoin(PlayerJoinEvent event) {
-            Player player = event.getPlayer();
-            if (perms.has(player, "vault.update")) {
-                try {
-                    if (newVersion > currentVersion) {
-                        player.sendMessage("Vault " +  newVersionTitle + " is out! You are running " + currentVersionTitle);
-                        player.sendMessage("Update Vault at: " + VAULT_BUKKIT_URL);
-                    }
-                } catch (Exception e) {
-                    // Ignore exceptions
-                }
-            }
-        }
-
-    }
 }

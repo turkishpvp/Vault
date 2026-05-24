@@ -46,7 +46,7 @@ public class Permission_Xperms extends Permission {
                         }
                     } catch(NumberFormatException e){
                         // version is first release, numbered 1.0.0
-                        log.info(String.format("[%s] [Permission] %s Current version is not compatibe with vault! Please Update!", plugin.getDescription().getName(), name));
+                        log.info(String.format("[%s] [Permission] %s Current version is not compatible with vault! Please Update!", plugin.getDescription().getName(), name));
                     }
                 }
                 this.perms = (Main) perms;
@@ -73,7 +73,7 @@ public class Permission_Xperms extends Permission {
                         }
                     } catch(NumberFormatException e){
                         // version is first release, numbered 1.0.0
-                        log.info(String.format("[%s] [Permission] %s Current version is not compatibe with vault! Please Update!", plugin.getDescription().getName(), name));
+                        log.info(String.format("[%s] [Permission] %s Current version is not compatible with vault! Please Update!", plugin.getDescription().getName(), name));
                     }
                     permission.perms = (Main) perms;
                     log.info(String.format("[%s][Permission] %s hooked.", plugin.getDescription().getName(), name));

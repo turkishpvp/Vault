@@ -80,7 +80,18 @@ public class Permission_Privileges extends Permission {
     }
 
     @Override
+    public boolean playerHas(String world, OfflinePlayer player, String permission) {
+        Player onlinePlayer = player.getPlayer();
+        return onlinePlayer != null && onlinePlayer.hasPermission(permission);
+    }
+
+    @Override
     public boolean playerAdd(String world, String player, String permission) {
+        return false;
+    }
+
+    @Override
+    public boolean playerAdd(String world, OfflinePlayer player, String permission) {
         return false;
     }
 
@@ -88,6 +99,11 @@ public class Permission_Privileges extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
+        return false;
+    }
+
+    @Override
+    public boolean playerRemove(String world, OfflinePlayer player, String permission) {
         return false;
     }
 
@@ -111,37 +127,60 @@ public class Permission_Privileges extends Permission {
 
     @Override
     public boolean playerInGroup(String world, String player, String group) {
-        OfflinePlayer p = Bukkit.getOfflinePlayer(player);
-        Group g = privs.getGroupManager().getGroup(p);
+        return playerInGroup(world, Bukkit.getOfflinePlayer(player), group);
+    }
+
+    @Override
+    public boolean playerInGroup(String world, OfflinePlayer player, String group) {
+        Group g = privs.getGroupManager().getGroup(player);
         return g != null && g.isMemberOf(group);
     }
 
     @Override
     public boolean playerAddGroup(String world, String player, String group) {
-        Group g = privs.getGroupManager().setGroup(player, group);
+        return playerAddGroup(world, Bukkit.getOfflinePlayer(player), group);
+    }
+
+    @Override
+    public boolean playerAddGroup(String world, OfflinePlayer player, String group) {
+        String playerName = player.getName();
+        if (playerName == null) {
+            return false;
+        }
+        Group g = privs.getGroupManager().setGroup(playerName, group);
         return g != null;
     }
 
     @Override
     public boolean playerRemoveGroup(String world, String player, String group) {
+        return playerRemoveGroup(world, Bukkit.getOfflinePlayer(player), group);
+    }
+
+    @Override
+    public boolean playerRemoveGroup(String world, OfflinePlayer player, String group) {
         Group g = privs.getGroupManager().getDefaultGroup();
         return g != null && playerAddGroup(world, player, g.getName());
     }
 
     @Override
     public String[] getPlayerGroups(String world, String player) {
-        OfflinePlayer p = Bukkit.getOfflinePlayer(player);
-        if (p == null) {
-            throw new UnsupportedOperationException("Privileges does not support offline players.");
-        }
-        Group g = privs.getGroupManager().getGroup(p);
-        return g != null ? g.getGroupTree().toArray(new String[g.getGroupTree().size()]) : null;
+        return getPlayerGroups(world, Bukkit.getOfflinePlayer(player));
+    }
+
+    @Override
+    public String[] getPlayerGroups(String world, OfflinePlayer player) {
+        Group g = privs.getGroupManager().getGroup(player);
+        return g != null ? g.getGroupTree().toArray(new String[g.getGroupTree().size()]) : new String[0];
     }
 
     @Override
     public String getPrimaryGroup(String world, String player) {
-        OfflinePlayer p = Bukkit.getOfflinePlayer(player);
-        Group g = privs.getGroupManager().getGroup(p);
+        return getPrimaryGroup(world, Bukkit.getOfflinePlayer(player));
+    }
+
+    @Override
+    public String getPrimaryGroup(String world, OfflinePlayer player) {
+        Group g = privs.getGroupManager().getGroup(player);
         return g != null ? g.getName() : null;
     }
 

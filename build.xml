@@ -28,7 +28,7 @@
   
     <target name="compile" description="Compilation target">
     	<echo>Compiling</echo>
-        <javac srcdir="." destdir="bin" debug="on" debuglevel="lines,vars,source" classpathref="classpath" includeantruntime="false" />
+        <javac srcdir="." destdir="bin" debug="on" debuglevel="lines,vars,source" release="21" classpathref="classpath" includeantruntime="false" />
     	<copy file="plugin.yml" tofile="bin/plugin.yml" />
     	<replace file="bin/plugin.yml" token="b000" value="b${env.BUILD_NUMBER}" />
     </target>
@@ -53,8 +53,8 @@
 			verbose="false"
 			author="true"
 			version="true">
-	    <link href="http://docs.oracle.com/javase/7/docs/api/" />
-        <link href="http://jd.bukkit.org/apidocs/" />
+	    <link href="https://docs.oracle.com/en/java/javase/21/docs/api/" />
+        <link href="https://hub.spigotmc.org/javadocs/bukkit/" />
 
 		<classpath>
 			<fileset dir="lib" includes="**/*.jar"/>

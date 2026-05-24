@@ -95,10 +95,21 @@ public class Permission_Starburst extends Permission {
         return name;
     }
 
+    private GroupSet getGroupSet(String world) {
+        if (world == null || Bukkit.getWorld(world) == null) {
+            return perms.getGroupManager().getDefaultGroupSet();
+        }
+        return perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+    }
+
     @Override
     public String[] getPlayerGroups(String world, String player) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        return getPlayerGroups(world, Bukkit.getOfflinePlayer(player));
+    }
+
+    @Override
+    public String[] getPlayerGroups(String world, OfflinePlayer op) {
+        GroupSet set = getGroupSet(world);
         User user = set.getUser(op);
 
         Set<Group> children = user.getChildren(true);
@@ -111,8 +122,12 @@ public class Permission_Starburst extends Permission {
 
     @Override
     public String getPrimaryGroup(String world, String player) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        return getPrimaryGroup(world, Bukkit.getOfflinePlayer(player));
+    }
+
+    @Override
+    public String getPrimaryGroup(String world, OfflinePlayer op) {
+        GroupSet set = getGroupSet(world);
         User user = set.getUser(op);
 
         Set<Group> children = user.getChildren(false);
@@ -191,8 +206,12 @@ public class Permission_Starburst extends Permission {
 
     @Override
     public boolean playerAdd(String world, String player, String permission) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        return playerAdd(world, Bukkit.getOfflinePlayer(player), permission);
+    }
+
+    @Override
+    public boolean playerAdd(String world, OfflinePlayer op, String permission) {
+        GroupSet set = getGroupSet(world);
         User user = set.getUser(op);
 
         boolean value = !permission.startsWith("^");
@@ -207,8 +226,12 @@ public class Permission_Starburst extends Permission {
 
     @Override
     public boolean playerAddGroup(String world, String player, String group) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        return playerAddGroup(world, Bukkit.getOfflinePlayer(player), group);
+    }
+
+    @Override
+    public boolean playerAddGroup(String world, OfflinePlayer op, String group) {
+        GroupSet set = getGroupSet(world);
         User user = set.getUser(op);
 
         if (set.hasGroup(group)) {
@@ -230,24 +253,31 @@ public class Permission_Starburst extends Permission {
 
     @Override
     public boolean playerHas(String world, String player, String permission) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
+        return playerHas(world, Bukkit.getOfflinePlayer(player), permission);
+    }
 
-        if (op.isOnline()) {
-            Player p = (Player) op;
-            if (p.getWorld().getName().equalsIgnoreCase(world)) {
+    @Override
+    public boolean playerHas(String world, OfflinePlayer op, String permission) {
+        if (op.isOnline() && op.getPlayer() != null) {
+            Player p = op.getPlayer();
+            if (world == null || p.getWorld().getName().equalsIgnoreCase(world)) {
                 return p.hasPermission(permission);
             }
         }
 
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        GroupSet set = getGroupSet(world);
         Group user = set.getUser(op);
         return user.hasPermission(permission, true);
     }
 
     @Override
     public boolean playerInGroup(String world, String player, String group) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        return playerInGroup(world, Bukkit.getOfflinePlayer(player), group);
+    }
+
+    @Override
+    public boolean playerInGroup(String world, OfflinePlayer op, String group) {
+        GroupSet set = getGroupSet(world);
         User user = set.getUser(op);
 
         if (set.hasGroup(group)) {
@@ -260,8 +290,12 @@ public class Permission_Starburst extends Permission {
 
     @Override
     public boolean playerRemove(String world, String player, String permission) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        return playerRemove(world, Bukkit.getOfflinePlayer(player), permission);
+    }
+
+    @Override
+    public boolean playerRemove(String world, OfflinePlayer op, String permission) {
+        GroupSet set = getGroupSet(world);
         User user = set.getUser(op);
 
         boolean value = !permission.startsWith("^");
@@ -279,8 +313,12 @@ public class Permission_Starburst extends Permission {
 
     @Override
     public boolean playerRemoveGroup(String world, String player, String group) {
-        OfflinePlayer op = Bukkit.getOfflinePlayer(player);
-        GroupSet set = perms.getGroupManager().getWorldSet(Bukkit.getWorld(world));
+        return playerRemoveGroup(world, Bukkit.getOfflinePlayer(player), group);
+    }
+
+    @Override
+    public boolean playerRemoveGroup(String world, OfflinePlayer op, String group) {
+        GroupSet set = getGroupSet(world);
         User user = set.getUser(op);
 
         if (set.hasGroup(group)) {

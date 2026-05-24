@@ -21,5 +21,5 @@ commands:
     permission: vault.admin
 permissions:
   vault.admin:
-    description: Notifies the player when vault is in need of an update.
+    description: Allows access to Vault administrative commands.
     default: op
