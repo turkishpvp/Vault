@@ -18,3 +18,5 @@ bin
 /dependency-reduced-pom.xml
 .headroom/
 .codex/
+
+.idea/
